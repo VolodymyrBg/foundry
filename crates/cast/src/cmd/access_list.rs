@@ -31,6 +31,13 @@ pub struct AccessListArgs {
     #[arg(value_name = "ARGS", allow_negative_numbers = true)]
     args: Vec<String>,
 
+    /// Raw hex-encoded data for the transaction. Used instead of [SIG] and [ARGS].
+    #[arg(
+        long,
+        conflicts_with_all = &["sig", "args"]
+    )]
+    data: Option<String>,
+
     /// The block height to query at.
     ///
     /// Can also be the tags earliest, finalized, safe, latest, or pending.
@@ -49,7 +56,11 @@ pub struct AccessListArgs {
 
 impl AccessListArgs {
     pub async fn run(self) -> Result<()> {
-        let Self { to, sig, args, tx, rpc, wallet, block } = self;
+        let Self { to, mut sig, args, data, tx, rpc, wallet, block } = self;
+
+        if let Some(data) = data {
+            sig = Some(data);
+        }
 
         let config = rpc.load_config()?;
         let provider = utils::get_provider(&config)?;
